@@ -1,0 +1,159 @@
+#%%
+from goodrich.ch06.array_stack import ArrayStack
+from goodrich.ch06.array_queue import ArrayQueue
+from goodrich.exceptions import Empty
+#%%
+# EJERCICIO 1
+class StackVaciable(ArrayStack):
+    """ArrayStack con un metodo adicional para vaciarse recursivamente."""
+
+    def vaciar_recursivo(self):
+        """Remueve recursivamente todos los elementos de la pila (sin bucles)."""
+        if self.is_empty():
+            return
+        self.pop()
+        self.vaciar_recursivo()
+
+S1 = StackVaciable()
+for x in [5, 3, 7, 9, 1]:
+    S1.push(x)
+
+print('len antes de vaciar:', len(S1))
+S1.vaciar_recursivo()
+print('len despues de vaciar:', len(S1))
+print('is_empty:', S1.is_empty())
+
+# Caso borde: pila ya vacía
+S2 = StackVaciable()
+S2.vaciar_recursivo()
+print('pila ya vacia -> is_empty:', S2.is_empty())
+
+# %%
+# EJERCICIO 2
+
+def transfer(S, T):
+    """Mueve todos los elementos de S hacia T (S queda vacía).
+    El elemento que estaba en la cima de S termina en el fondo de T."""
+    while not S.is_empty():
+        T.push(S.pop())
+
+def invertir_pila(S):
+    """Reemplaza el contenido de S por los mismos elementos en orden invertido,
+    usando unicamente transfer() y dos pilas temporales."""
+    T1 = ArrayStack()
+    T2 = ArrayStack()
+    transfer(S, T1)   
+    transfer(T1, T2)  
+    transfer(T2, S)   
+#%%
+S3 = ArrayStack()
+for x in [1, 2, 3, 4, 5]:   # cima queda en 5
+    S3.push(x)
+
+invertir_pila(S3)
+
+orden_pop = []
+while not S3.is_empty():
+    orden_pop.append(S3.pop())
+
+print('orden de salida tras invertir:', orden_pop)
+print('esperado                    :', [1, 2, 3, 4, 5])
+print('OK' if orden_pop == [1, 2, 3, 4, 5] else 'FALLA')
+# %%
+# EJERCICIO 3
+
+def evaluar_postfija(expr):
+    """Evalua una expresion en notacion postfija (tokens separados por espacios)
+    de forma no recursiva, usando una ArrayStack."""
+    S = ArrayStack()
+    operadores = {"+", "-", "*", "/"}
+    for token in expr.split():
+        if token in operadores:
+            der = S.pop()   
+            izq = S.pop()   
+            if token == '+':
+                resultado = izq + der
+            elif token == '-':
+                resultado = izq - der
+            elif token == '*':
+                resultado = izq * der
+            elif token == '/':
+                resultado = izq / der
+            S.push(resultado)
+        else:
+            S.push(float(token))
+
+    return S.pop()
+#%%
+casos = [
+    ('5 2 + 8 3 - * 4 /', 8.75),
+    ('3 4 +', 7.0),
+    ('10 2 /', 5.0),
+    ('2 3 4 * +', 14.0),
+    ('7', 7.0),
+]
+for expr, esperado in casos:
+    resultado = evaluar_postfija(expr)
+    print(f'{expr!r:22s} -> {resultado}   esperado: {esperado}   {"OK" if resultado == esperado else "FALLA"}')
+# %%
+# EJERCICIO 4
+
+class QueueDosPilas:
+    def __init__(self):
+        self._entrada = ArrayStack()
+        self._salida = ArrayStack()
+
+    def __len__(self):
+        return len(self._entrada) + len(self._salida)
+
+    def is_empty(self):
+        return len(self) == 0
+
+    def enqueue(self, e):
+        self._entrada.push(e)
+
+    def _trasvasar_si_hace_falta(self):
+        """Si _salida esta vacia, mueve todo el contenido de _entrada a _salida."""
+        if self._salida.is_empty():
+            while not self._entrada.is_empty():
+                self._salida.push(self._entrada.pop())
+
+    def first(self):
+        if self.is_empty():
+            raise Empty('La cola esta vacia')
+        self._trasvasar_si_hace_falta()
+        return self._salida.top()
+
+    def dequeue(self):
+        if self.is_empty():
+            raise Empty('La cola esta vacia')
+        self._trasvasar_si_hace_falta()
+        return self._salida.pop()
+
+#%% 
+Q = QueueDosPilas()
+for x in [10, 20, 30]:
+    Q.enqueue(x)
+
+print('dequeue ->', Q.dequeue())   # esperado: 10 (FIFO)
+Q.enqueue(40)
+print('dequeue ->', Q.dequeue())   # esperado: 20
+print('dequeue ->', Q.dequeue())   # esperado: 30
+print('dequeue ->', Q.dequeue())   # esperado: 40
+print('is_empty:', Q.is_empty())
+
+try:
+    QueueDosPilas().dequeue()
+except Empty as e:
+    print('Empty capturado correctamente:', e)
+# %%
+# RESPUESTA:
+# Peor caso de un dequeue individual: O(n)
+# Caso amortizado sobre una secuencia de n operaciones: O(1)
+# Justificacion:
+# Cada elemento se mueve como maximo 4 veces en toda su vida:
+# push a _entrada, pop de _entrada, push a _salida, pop de _salida.
+# Para n operaciones el costo total esta acotado por 4n = O(n),
+# entonces el costo amortizado por operacion es O(n)/n = O(1),
+# aunque un dequeue puntual (cuando hay que trasvasar) cueste O(n).
+# %%
