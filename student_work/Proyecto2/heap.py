@@ -22,7 +22,7 @@ class Heap:
         if imagen:
             self._dibujar()
 
-    def remove_smallest(self, imagen=True):
+    def remove_smallest(self, imagen=False):
         """Remueve y retorna el elemento mínimo (la raíz)."""
         if len(self.arreglo) <= 1:
             raise IndexError("remove_smallest de un Heap vacío")
