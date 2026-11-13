@@ -1,3 +1,6 @@
+import graphviz
+from IPython.display import display
+
 class Heap:
     def __init__(self):
         self.arreglo = [float('-inf')]
@@ -20,10 +23,9 @@ class Heap:
             padre = self.arreglo[indice_padre]
 
         if imagen:
-            self._dibujar()
+            display(self._dibujar())
 
     def remove_smallest(self, imagen=False):
-        """Remueve y retorna el elemento mínimo (la raíz)."""
         if len(self.arreglo) <= 1:
             raise IndexError("remove_smallest de un Heap vacío")
 
@@ -40,10 +42,7 @@ class Heap:
                 hijo_der = 2 * i + 1
                 menor = hijo_izq
 
-                if (
-                    hijo_der <= n
-                    and self.arreglo[hijo_der] < self.arreglo[hijo_izq]
-                ):
+                if hijo_der <= n and self.arreglo[hijo_der] < self.arreglo[hijo_izq]:
                     menor = hijo_der
 
                 if self.arreglo[i] > self.arreglo[menor]:
@@ -56,12 +55,11 @@ class Heap:
                     break
 
         if imagen:
-            self._dibujar()
+            display(self._dibujar())
 
         return minimo
 
     def build_heap(self, lista, imagen=False):
-        """Construye un min-heap en O(n) idéntico al de la herramienta interactiva."""
         self.arreglo = [float('-inf')] + list(lista)
         n = len(self.arreglo) - 1
 
@@ -72,10 +70,7 @@ class Heap:
                 hijo_der = 2 * i + 1
                 menor = hijo_izq
 
-                if (
-                    hijo_der <= n
-                    and self.arreglo[hijo_der] < self.arreglo[hijo_izq]
-                ):
+                if hijo_der <= n and self.arreglo[hijo_der] < self.arreglo[hijo_izq]:
                     menor = hijo_der
 
                 if self.arreglo[i] > self.arreglo[menor]:
@@ -88,9 +83,20 @@ class Heap:
                     break
 
         if imagen:
-            self._dibujar()
+            display(self._dibujar())
 
     def _dibujar(self):
-        """Imprime el estado del heap (sin el -inf) para simular la imagen."""
-        if len(self.arreglo) > 1:
-            print(f"Estado del Heap: {self.arreglo[1:]}")
+        """Genera el árbol y retorna el objeto para poder guardarlo."""
+        if len(self.arreglo) <= 1:
+            return None
+
+        dot = graphviz.Digraph()
+        dot.attr('node', shape='circle', style='filled', fillcolor='lightblue')
+
+        n = len(self.arreglo)
+        for i in range(1, n):
+            dot.node(str(i), str(self.arreglo[i]))
+            if i > 1:
+                dot.edge(str(i // 2), str(i))
+
+        return dot
